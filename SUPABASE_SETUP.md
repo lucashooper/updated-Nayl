@@ -23,13 +23,15 @@ This guide will walk you through setting up Supabase for your Nayl app to save t
 
 ## Step 3: Update Your App Configuration
 
-1. Open `src/lib/supabase.ts` in your project
-2. Replace the placeholder values with your actual credentials:
+1. Copy `.env.example` to `.env` in the project root
+2. Set your Supabase credentials (never commit `.env`):
 
-```typescript
-const supabaseUrl = 'https://your-project-id.supabase.co';
-const supabaseAnonKey = 'your-anon-key-here';
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ```
+
+3. Restart Expo after changing env vars (`npx expo start -c`)
 
 ## Step 4: Set Up the Database Schema
 
