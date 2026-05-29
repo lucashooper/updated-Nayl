@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  ActivityIndicator,
+  Alert,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -17,6 +20,12 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import hapticService, { HapticType, HapticIntensity } from '../services/hapticService';
+import iapService from '../services/iapService';
+import { PurchasesPackage } from 'react-native-purchases';
+
+// Replace these URLs with your actual hosted pages
+const PRIVACY_POLICY_URL = 'https://nayl.app/privacy';
+const TERMS_URL = 'https://nayl.app/terms';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,9 +33,53 @@ interface NaylProUpgradeScreenProps {
   onUnlockPro: () => void;
 }
 
+type PlanId = 'weekly' | 'monthly' | 'yearly';
+
+const PLAN_LABELS: Record<PlanId, { title: string; duration: string }> = {
+  weekly: { title: 'Weekly', duration: '1 week' },
+  monthly: { title: 'Monthly', duration: '1 month' },
+  yearly: { title: 'Yearly', duration: '1 year' },
+};
+
 const NaylProUpgradeScreen: React.FC<NaylProUpgradeScreenProps> = ({
   onUnlockPro,
 }) => {
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>('weekly');
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [packages, setPackages] = useState<Record<string, PurchasesPackage>>({});
+
+  // Fetch available packages from RevenueCat on mount
+  useEffect(() => {
+    const loadOfferings = async () => {
+      try {
+        const offering = await iapService.getOfferings();
+        if (offering?.availablePackages) {
+          const pkgMap: Record<string, PurchasesPackage> = {};
+          for (const pkg of offering.availablePackages) {
+            const id = pkg.packageType.toLowerCase();
+            pkgMap[id] = pkg;
+          }
+          setPackages(pkgMap);
+        }
+      } catch {
+        // Offerings may fail in development; the purchase will gracefully error too
+      }
+    };
+    loadOfferings();
+  }, []);
+
+  const getPriceString = (planId: PlanId): string => {
+    const pkg = packages[planId];
+    if (pkg) return pkg.product.priceString;
+    const fallbacks: Record<PlanId, string> = {
+      weekly: '£2.99/week',
+      monthly: '£8.99/month',
+      yearly: '£33.99/year',
+    };
+    return fallbacks[planId];
+  };
+
   // Animation values for entrance animations
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(30);
@@ -79,11 +132,57 @@ const NaylProUpgradeScreen: React.FC<NaylProUpgradeScreenProps> = ({
 
   const handleUnlockPro = async () => {
     try {
+      setIsPurchasing(true);
       await hapticService.trigger(HapticType.SUCCESS, HapticIntensity.NORMAL);
-      onUnlockPro();
-    } catch (error) {
-      console.warn('Haptic feedback error:', error);
-      onUnlockPro();
+
+      const pkg = packages[selectedPlan];
+      if (!pkg) {
+        Alert.alert(
+          'Unavailable',
+          'Subscription products are not available right now. Please try again later.',
+        );
+        setIsPurchasing(false);
+        return;
+      }
+
+      const result = await iapService.purchasePackage(pkg);
+
+      if (result.userCancelled) {
+        setIsPurchasing(false);
+        return;
+      }
+
+      if (result.success) {
+        onUnlockPro();
+      } else {
+        Alert.alert(
+          'Purchase Failed',
+          'Your purchase could not be completed. Please try again.',
+        );
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error?.message ?? 'An unexpected error occurred.');
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    try {
+      setIsRestoring(true);
+      const result = await iapService.restorePurchases();
+      if (result.success) {
+        await hapticService.trigger(HapticType.SUCCESS, HapticIntensity.NORMAL);
+        Alert.alert('Restored!', 'Your Nayl Pro subscription has been restored.', [
+          { text: 'Continue', onPress: onUnlockPro },
+        ]);
+      } else {
+        Alert.alert('No Subscription Found', 'We could not find an active subscription to restore.');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error?.message ?? 'Could not restore purchases. Please try again.');
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -239,35 +338,46 @@ const NaylProUpgradeScreen: React.FC<NaylProUpgradeScreenProps> = ({
           <View style={styles.purchaseOverlay}>
             <View style={styles.purchaseOptionsContainer}>
               {/* Weekly Option */}
-              <View style={styles.purchaseOption}>
+              <TouchableOpacity
+                style={[styles.purchaseOption, selectedPlan === 'weekly' && styles.purchaseOptionSelected]}
+                onPress={() => setSelectedPlan('weekly')}
+                activeOpacity={0.8}
+              >
                 <View style={styles.popularTag}>
                   <Text style={styles.popularTagText}>most popular</Text>
                 </View>
                 <Text style={styles.purchaseOptionTitle}>Weekly</Text>
-                <Text style={styles.purchaseOptionPrice}>£2.99/week</Text>
-                <Text style={styles.purchaseOptionPrice}>£2.99/week</Text>
-              </View>
+                <Text style={styles.purchaseOptionPrice}>{getPriceString('weekly')}</Text>
+              </TouchableOpacity>
 
               {/* Yearly Option */}
-              <View style={[styles.purchaseOption, styles.purchaseOptionHighlighted]}>
+              <TouchableOpacity
+                style={[styles.purchaseOption, styles.purchaseOptionHighlighted, selectedPlan === 'yearly' && styles.purchaseOptionSelected]}
+                onPress={() => setSelectedPlan('yearly')}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.purchaseOptionTitle}>Yearly</Text>
-                <Text style={styles.purchaseOptionPrice}>£33.99/year</Text>
-                <Text style={styles.purchaseOptionPrice}>£0.65/week</Text>
-              </View>
+                <Text style={styles.purchaseOptionPrice}>{getPriceString('yearly')}</Text>
+                <Text style={styles.purchaseOptionSavings}>Best value</Text>
+              </TouchableOpacity>
 
               {/* Monthly Option */}
-              <View style={styles.purchaseOption}>
+              <TouchableOpacity
+                style={[styles.purchaseOption, selectedPlan === 'monthly' && styles.purchaseOptionSelected]}
+                onPress={() => setSelectedPlan('monthly')}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.purchaseOptionTitle}>Monthly</Text>
-                <Text style={styles.purchaseOptionPrice}>£8.99/month</Text>
-                <Text style={styles.purchaseOptionPrice}>£2.08/week</Text>
-              </View>
+                <Text style={styles.purchaseOptionPrice}>{getPriceString('monthly')}</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Unlock Button */}
             <TouchableOpacity
-              style={styles.unlockButton}
+              style={[styles.unlockButton, isPurchasing && styles.unlockButtonDisabled]}
               onPress={handleUnlockPro}
               activeOpacity={0.8}
+              disabled={isPurchasing}
             >
               <LinearGradient
                 colors={['#7C3AED', '#EC4899']}
@@ -275,17 +385,44 @@ const NaylProUpgradeScreen: React.FC<NaylProUpgradeScreenProps> = ({
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={styles.buttonText}>Start rewiring now</Text>
+                {isPurchasing ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.buttonText}>Start rewiring now</Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 
+            {/* Auto-renewal disclosure (required by Guideline 3.1.2) */}
+            <Text style={styles.subscriptionDisclosure}>
+              {`Nayl Pro – ${PLAN_LABELS[selectedPlan].title} Plan\n`}
+              {`Subscription length: ${PLAN_LABELS[selectedPlan].duration}. `}
+              {'Payment will be charged to your Apple ID account at confirmation of purchase. '
+              + 'Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. '
+              + 'Account will be charged for renewal within 24 hours prior to the end of the current period. '
+              + 'Manage or cancel your subscription in your Apple ID Account Settings.'}
+            </Text>
+
             {/* Footer Links */}
             <View style={styles.footerLinks}>
-              <Text style={styles.footerLink}>Restore Purchase</Text>
+              <TouchableOpacity
+                onPress={handleRestorePurchases}
+                disabled={isRestoring}
+              >
+                {isRestoring ? (
+                  <ActivityIndicator color="#94A3B8" size="small" />
+                ) : (
+                  <Text style={styles.footerLink}>Restore Purchase</Text>
+                )}
+              </TouchableOpacity>
               <Text style={styles.footerDot}>•</Text>
-              <Text style={styles.footerLink}>Terms & Conditions</Text>
+              <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
+                <Text style={styles.footerLink}>Terms & Conditions</Text>
+              </TouchableOpacity>
               <Text style={styles.footerDot}>•</Text>
-              <Text style={styles.footerLink}>Privacy Policy</Text>
+              <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+                <Text style={styles.footerLink}>Privacy Policy</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Animated.View>
@@ -487,18 +624,49 @@ const styles = StyleSheet.create({
     marginBottom: 1,
     textAlign: 'center',
   },
+  purchaseOptionSelected: {
+    borderColor: '#A855F7',
+    borderWidth: 2,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  purchaseOptionSavings: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#A855F7',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  unlockButtonDisabled: {
+    opacity: 0.7,
+  },
+  subscriptionDisclosure: {
+    fontSize: 10,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 14,
+    marginTop: 8,
+    marginBottom: 4,
+    paddingHorizontal: 4,
+  },
   footerLinks: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 8,
     paddingHorizontal: 8,
+    flexWrap: 'wrap',
+    gap: 2,
   },
   footerLink: {
     fontSize: 13,
     color: '#94A3B8',
     fontWeight: '500',
     textAlign: 'center',
+    textDecorationLine: 'underline',
   },
   footerDot: {
     marginHorizontal: 4,

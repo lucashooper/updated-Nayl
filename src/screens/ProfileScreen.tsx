@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert, ScrollView, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, ScrollView, TextInput, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -10,6 +10,10 @@ import { useAchievements } from '../context/AchievementContext';
 import { SPACING } from '../constants/theme';
 import { typography } from '../constants/typography';
 import profileService, { ProfileData } from '../services/profileService';
+import sessionService from '../services/sessionService';
+
+const PRIVACY_POLICY_URL = 'https://nayl.app/privacy';
+const SUPPORT_URL = 'https://nayl.app/support';
 
 type ProfileStackParamList = {
   ProfileMain: undefined;
@@ -37,6 +41,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [editingName, setEditingName] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   
   // Check if theme context is ready
   if (!isReady || !colors) {
@@ -168,6 +173,53 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       console.error('Error updating profile name:', error);
       Alert.alert('Error', 'Failed to update profile name. Please try again.');
     }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete all your Nayl data including your progress, photos, triggers, and achievements. This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Are you sure?',
+              'All your data will be permanently deleted. You cannot recover it after this point.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, Delete Everything',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      setIsDeletingAccount(true);
+                      await sessionService.deleteAllUserData();
+                      Alert.alert(
+                        'Account Deleted',
+                        'Your data has been permanently deleted.',
+                        [
+                          {
+                            text: 'OK',
+                            onPress: () => navigation.navigate('Home' as never),
+                          },
+                        ],
+                      );
+                    } catch (error) {
+                      Alert.alert('Error', 'Failed to delete your data. Please try again or contact support.');
+                    } finally {
+                      setIsDeletingAccount(false);
+                    }
+                  },
+                },
+              ],
+            );
+          },
+        },
+      ],
+    );
   };
 
   const formatTime = (totalSeconds: number) => {
@@ -839,22 +891,25 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={{ 
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingVertical: SPACING.md,
-            paddingHorizontal: SPACING.lg,
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
-            borderRadius: SPACING.md,
-            marginBottom: SPACING.sm,
-            borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.08)',
-            shadowColor: colors.primaryAccent,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 4,
-          }}>
+          <TouchableOpacity
+            style={{ 
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: SPACING.md,
+              paddingHorizontal: SPACING.lg,
+              backgroundColor: 'rgba(15, 23, 42, 0.6)',
+              borderRadius: SPACING.md,
+              marginBottom: SPACING.sm,
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+              shadowColor: colors.primaryAccent,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
+            onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+          >
             <View style={{ 
               width: 40,
               height: 40,
@@ -873,26 +928,29 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               color: colors.primaryText,
               fontWeight: '500',
               flex: 1,
-            }}>Privacy</Text>
+            }}>Privacy Policy</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={{ 
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingVertical: SPACING.md,
-            paddingHorizontal: SPACING.lg,
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
-            borderRadius: SPACING.md,
-            marginBottom: SPACING.sm,
-            borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.08)',
-            shadowColor: colors.primaryAccent,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 4,
-          }}>
+          <TouchableOpacity
+            style={{ 
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: SPACING.md,
+              paddingHorizontal: SPACING.lg,
+              backgroundColor: 'rgba(15, 23, 42, 0.6)',
+              borderRadius: SPACING.md,
+              marginBottom: SPACING.sm,
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.08)',
+              shadowColor: colors.primaryAccent,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
+            onPress={() => Linking.openURL(SUPPORT_URL)}
+          >
             <View style={{ 
               width: 40,
               height: 40,
@@ -913,6 +971,47 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               flex: 1,
             }}>Help & Support</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
+          </TouchableOpacity>
+
+          {/* Delete Account — required by App Store Guideline 5.1.1(v) */}
+          <TouchableOpacity
+            style={{ 
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: SPACING.md,
+              paddingHorizontal: SPACING.lg,
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+              borderRadius: SPACING.md,
+              marginBottom: SPACING.sm,
+              borderWidth: 1,
+              borderColor: 'rgba(239, 68, 68, 0.25)',
+              elevation: 4,
+            }}
+            onPress={handleDeleteAccount}
+            disabled={isDeletingAccount}
+          >
+            <View style={{ 
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: SPACING.md,
+              borderWidth: 1,
+              borderColor: 'rgba(239, 68, 68, 0.3)',
+            }}>
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+            </View>
+            <Text style={{ 
+              fontSize: 16,
+              color: '#EF4444',
+              fontWeight: '500',
+              flex: 1,
+            }}>
+              {isDeletingAccount ? 'Deleting…' : 'Delete Account & Data'}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#EF4444" />
           </TouchableOpacity>
         </View>
 

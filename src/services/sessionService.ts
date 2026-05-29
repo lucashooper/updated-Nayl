@@ -937,6 +937,66 @@ class SessionService {
       throw error;
     }
   }
+
+  // Delete all data for the current user (account deletion, required by App Store Guideline 5.1.1v)
+  async deleteAllUserData(): Promise<void> {
+    try {
+      const userId = await this.getCurrentUserId();
+
+      // Delete from all tables that reference this user_id
+      const tablesToDelete = [
+        'user_sessions',
+        'user_stats',
+        'user_triggers',
+        'user_achievements',
+        'user_reasons',
+        'nail_progress_photos',
+        'user_profiles',
+      ];
+
+      for (const table of tablesToDelete) {
+        const { error } = await supabase
+          .from(table)
+          .delete()
+          .eq('user_id', userId);
+        if (error && error.code !== '42P01') {
+          // 42P01 = table does not exist, skip silently
+          console.warn(`Error deleting from ${table}:`, error.message);
+        }
+      }
+
+      // Delete profile pictures from Supabase Storage
+      const { data: files } = await supabase.storage
+        .from('user-uploads')
+        .list(userId);
+      if (files && files.length > 0) {
+        const paths = files.map((f) => `${userId}/${f.name}`);
+        await supabase.storage.from('user-uploads').remove(paths);
+      }
+
+      // Delete nail progress photos from storage
+      const { data: nailFiles } = await supabase.storage
+        .from('nail-progress')
+        .list(userId);
+      if (nailFiles && nailFiles.length > 0) {
+        const paths = nailFiles.map((f) => `${userId}/${f.name}`);
+        await supabase.storage.from('nail-progress').remove(paths);
+      }
+
+      // Clear all local AsyncStorage data
+      const allKeys = await AsyncStorage.getAllKeys();
+      const naylKeys = allKeys.filter((k) => k.startsWith('@nayl'));
+      if (naylKeys.length > 0) {
+        await AsyncStorage.multiRemove(naylKeys);
+      }
+
+      // Reset in-memory user ID so a fresh anonymous ID is created on next launch
+      this.currentUserId = null;
+    } catch (error) {
+      console.error('Error deleting user data:', error);
+      throw error;
+    }
+  }
 }
 
 export default new SessionService();

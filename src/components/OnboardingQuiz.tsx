@@ -443,8 +443,8 @@ const OnboardingQuiz: React.FC<OnboardingQuizProps> = ({ onComplete, onSkip }) =
   };
 
   const handleUnlockPro = () => {
-    // This would typically handle the actual purchase/subscription logic
-    // For now, we'll just complete the onboarding
+    // NaylProUpgradeScreen manages the purchase flow internally.
+    // This callback is invoked only after a successful purchase or restore.
     onComplete();
   };
 
