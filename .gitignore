@@ -36,5 +36,8 @@ yarn-error.*
 !.env.example
 !.env*.example
 
+# separate marketing site repo (see marketing-website/)
+marketing-website/
+
 # typescript
 *.tsbuildinfo

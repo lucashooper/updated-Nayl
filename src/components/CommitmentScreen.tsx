@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
   },
   signatureLabel: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 8,

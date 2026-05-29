@@ -72,7 +72,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   
   // Streak state from context
-  const { elapsedSeconds, refreshStreakData } = useStreak();
+  const { elapsedSeconds, refreshStreakData, setElapsedSecondsDirectly } = useStreak();
   
   // Gamification state
   const [isDayCompleteAndUnclaimed, setIsDayCompleteAndUnclaimed] = useState(false);
@@ -474,45 +474,24 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       // Store the trigger data using the service
       await triggerService.saveTrigger(trigger);
       
-      // Start the setback animation
-      setIsResetting(true);
-      setResetAnimationSeconds(elapsedSeconds);
+      // Single subtle haptic feedback
+      hapticService.trigger(HapticType.MEDIUM_TAP, HapticIntensity.NORMAL);
       
-      // Dramatic haptic feedback
-      hapticService.triggerPattern({
-        type: HapticType.ERROR,
-        intensity: HapticIntensity.PROMINENT,
-        repeat: 3,
-        interval: 200,
-      });
-      
-      // Animate the countdown to zero over 1.5 seconds
-      const animationDuration = 1500; // 1.5 seconds
-      const steps = 30; // 30 steps for smooth animation
-      const stepInterval = animationDuration / steps;
-      const timePerStep = elapsedSeconds / steps;
-      
-      let currentStep = 0;
-      const countdownInterval = setInterval(() => {
-        if (currentStep < steps) {
-          const remainingTime = Math.max(0, elapsedSeconds - (currentStep * timePerStep));
-          setResetAnimationSeconds(Math.floor(remainingTime));
-          currentStep++;
-        } else {
-          clearInterval(countdownInterval);
-          // Animation complete - reset everything
-          setIsResetting(false);
-          setResetAnimationSeconds(0);
-          
-          // Reset the session in the database
-          sessionService.resetSession(trigger);
-        }
-      }, stepInterval);
-      
+      // Immediately reset UI to zero for instant feedback
+      setElapsedSecondsDirectly(0);
+      setIsResetting(false);
+      setResetAnimationSeconds(0);
       setIsResetModalVisible(false);
+      
+      // Reset the session in the database in background
+      await sessionService.resetSession(trigger);
+      
+      // Reload dashboard to reflect the reset
+      await loadDashboardData();
     } catch (error) {
       console.error('Error resetting session:', error);
       // Still reset locally even if database fails
+      setElapsedSecondsDirectly(0);
       setIsResetting(false);
       setResetAnimationSeconds(0);
       setIsResetModalVisible(false);
@@ -601,10 +580,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.primaryBackground }]}>
         {/* Premium Background with Gradient */}
         <LinearGradient
-          colors={isResetting ? ['#2D0000', '#1A0000'] : colors.backgroundGradient}
+          colors={colors.backgroundGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          locations={isResetting ? undefined : [0, 0.55, 1]}
+          locations={[0, 0.55, 1]}
           style={styles.backgroundContainer}
         >
           {/* Subtle starfield effect */}
@@ -796,19 +775,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           onPress={handleStreakOverlay}
           activeOpacity={0.7}
         >
-          {isResetting && (
-            <View style={styles.resetAura} />
-          )}
-          {isResetting ? (
-            <Text style={[styles.prominentTimerText, styles.resetTimerText]}>
-              {formatTime(resetAnimationSeconds)}
-            </Text>
-          ) : (
-            <Text style={styles.prominentTimerText}>{quittrStyleTime.primary}</Text>
-          )}
+          <Text style={styles.prominentTimerText}>{quittrStyleTime.primary}</Text>
           
           {/* Secondary time display for days (QUITTR style) */}
-          {!isResetting && quittrStyleTime.secondary && (
+          {quittrStyleTime.secondary && (
             <View style={styles.secondaryTimeContainer}>
               <View style={styles.secondaryTimeRow}>
                 {quittrStyleTime.secondary.split('').map((ch, idx) => (

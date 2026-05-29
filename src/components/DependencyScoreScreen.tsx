@@ -402,11 +402,12 @@ const styles = StyleSheet.create({
     maxWidth: width * 0.9,
   },
   headline: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
     lineHeight: 36,
+    paddingHorizontal: 16,
     letterSpacing: 0.5,
   },
   highlightedWord: {

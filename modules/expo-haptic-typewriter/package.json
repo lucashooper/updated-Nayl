@@ -1,0 +1,20 @@
+{
+  "name": "expo-haptic-typewriter",
+  "version": "1.0.0",
+  "description": "Native Core Haptics typewriter module for ultra-smooth haptic feedback",
+  "main": "index.ts",
+  "scripts": {},
+  "keywords": [
+    "expo",
+    "haptics",
+    "typewriter",
+    "core-haptics"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/expo/expo.git",
+    "directory": "packages/expo-haptic-typewriter"
+  },
+  "author": "Expo",
+  "license": "MIT"
+}

@@ -4,6 +4,7 @@ import sessionService from '../services/sessionService';
 interface StreakContextType {
   elapsedSeconds: number;
   refreshStreakData: () => Promise<void>;
+  setElapsedSecondsDirectly: (seconds: number) => void;
   updateStreakStartTime: (newStartTime: Date) => Promise<void>;
   updateCurrentStreak: () => Promise<void>;
   isLoading: boolean;
@@ -27,6 +28,11 @@ export const StreakProvider: React.FC<StreakProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('StreakContext: Error refreshing streak data:', error);
     }
+  }, []);
+
+  // Function to immediately set elapsed seconds (for instant reset)
+  const setElapsedSecondsDirectly = useCallback((seconds: number) => {
+    setElapsedSeconds(seconds);
   }, []);
 
   // Function to update streak start time
@@ -93,10 +99,11 @@ export const StreakProvider: React.FC<StreakProviderProps> = ({ children }) => {
   const value: StreakContextType = useMemo(() => ({
     elapsedSeconds,
     refreshStreakData,
+    setElapsedSecondsDirectly,
     updateStreakStartTime,
     updateCurrentStreak,
     isLoading,
-  }), [elapsedSeconds, refreshStreakData, updateStreakStartTime, updateCurrentStreak, isLoading]);
+  }), [elapsedSeconds, refreshStreakData, setElapsedSecondsDirectly, updateStreakStartTime, updateCurrentStreak, isLoading]);
 
   return (
     <StreakContext.Provider value={value}>

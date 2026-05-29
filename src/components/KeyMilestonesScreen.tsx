@@ -396,32 +396,23 @@ const KeyMilestonesScreen: React.FC<KeyMilestonesScreenProps> = ({ onContinue })
               opacity={1}
             />
             
-            {/* Enhanced Milestone markers with premium styling */}
+            {/* Enhanced Milestone markers with premium styling - labels removed for cleaner chart */}
             <Animated.View style={[styles.milestoneContainer, milestone1Style]}>
               <View style={[styles.milestoneMarker, { left: graphWidth * 0.2 - 16, top: graphHeight - graphPadding - 60 - 16 }]}>
                 <MilestoneCheckmark color="#F97316" size={32} />
               </View>
-              <Text style={[styles.milestoneLabel, { left: graphWidth * 0.2 - 20 }]}>
-                7 days
-              </Text>
             </Animated.View>
 
             <Animated.View style={[styles.milestoneContainer, milestone2Style]}>
               <View style={[styles.milestoneMarker, { left: graphWidth * 0.4 - 16, top: graphHeight - graphPadding - 100 - 16 }]}>
                 <MilestoneCheckmark color="#10B981" size={32} />
               </View>
-              <Text style={[styles.milestoneLabel, { left: graphWidth * 0.4 - 20 }]}>
-                30 days
-              </Text>
             </Animated.View>
 
             <Animated.View style={[styles.milestoneContainer, milestone3Style]}>
               <View style={[styles.milestoneMarker, { left: graphWidth * 0.8 - 16, top: graphHeight - graphPadding - 140 - 16 }]}>
                 <MilestoneCheckmark color="#3B82F6" size={32} />
               </View>
-              <Text style={[styles.milestoneLabel, { left: graphWidth * 0.8 - 20 }]}>
-                90 days
-              </Text>
             </Animated.View>
           </Svg>
         </Animated.View>
@@ -510,14 +501,12 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 28,
-    fontWeight: '800',
+    fontWeight: '700', // Softer weight
     color: '#FFFFFF',
     textAlign: 'center',
-    lineHeight: 34,
-    letterSpacing: 0.4,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    lineHeight: 38, // Improved line spacing
+    letterSpacing: 0.3,
+    paddingHorizontal: 16,
   },
   graphContainer: {
     alignItems: 'center',
@@ -564,15 +553,12 @@ const styles = StyleSheet.create({
     marginBottom: 40, // Reduced from 60 to 40 for better spacing with button
   },
   listTitle: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '600', // Softer weight for hierarchy
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 28,
-    letterSpacing: 0.4,
-    textShadowColor: 'rgba(0, 0, 0, 0.6)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    marginBottom: 32,
+    letterSpacing: 0.3,
   },
   milestoneItem: {
     flexDirection: 'row',
@@ -605,14 +591,11 @@ const styles = StyleSheet.create({
   },
   milestoneText: {
     flex: 1,
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500', // Lighter weight
+    color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 24,
-    letterSpacing: 0.3,
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
+    letterSpacing: 0.2,
   },
   buttonContainer: {
     width: '100%',

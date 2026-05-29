@@ -217,7 +217,7 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onStart, onLogin,
         <Animated.Text style={[
           styles.tagline, 
           taglineAnimatedStyle
-        ]}>Save your nails and reclaim control with Nayl.</Animated.Text>
+        ]}>Save your nails and{"\n"}reclaim control with Nayl.</Animated.Text>
         
         {/* Start Journey Button */}
         <Animated.View style={buttonsAnimatedStyle}>
@@ -230,12 +230,12 @@ const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onStart, onLogin,
               activeOpacity={1}
             >
               <LinearGradient
-                colors={['#7C3AED', '#EC4899']}
+                colors={['#6D28D9', '#DB2777']} // Slightly softer saturation
                 style={styles.buttonGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={styles.buttonText}>Start my journey</Text>
+                <Text style={styles.buttonText}>Begin</Text>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
@@ -285,48 +285,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    paddingTop: 60,
-    zIndex: 10, // Ensure content section is above stars
+    paddingTop: 80, // More breathing room
+    zIndex: 10,
   },
   
   appTitle: {
-    fontSize: 68, // Slightly refined size for premium feel
-    fontWeight: '800', // Bolder weight for more impact
+    fontSize: 64,
+    fontWeight: '600', // Semibold for calm confidence
     color: '#FFFFFF',
-    marginBottom: 24, // Better spacing
+    marginBottom: 20,
     textAlign: 'center',
-    lineHeight: 76, // Proper line height for premium typography
-    letterSpacing: -0.5, // Tighter letter spacing for modern look
-    textShadowColor: 'rgba(0, 0, 0, 0.3)', // Subtle text shadow
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-    zIndex: 10, // Ensure title is above stars
+    lineHeight: 72,
+    letterSpacing: 2, // Refined letter spacing for premium brand feel
+    zIndex: 10,
   },
   
   tagline: {
-    fontSize: 20, // Refined size for premium feel
-    fontWeight: '500', // Medium weight for better hierarchy
-    color: 'rgba(255, 255, 255, 0.95)', // Slightly more refined color
+    fontSize: 17,
+    fontWeight: '400', // Light weight for elegance
+    color: 'rgba(255, 255, 255, 0.75)', // Reduced opacity for hierarchy
     textAlign: 'center',
-    marginBottom: 52, // Better spacing
-    lineHeight: 28,
-    letterSpacing: 0.2, // Subtle letter spacing for readability
-    textShadowColor: 'rgba(0, 0, 0, 0.2)', // Very subtle text shadow
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-    zIndex: 10, // Ensure tagline is above stars
+    marginBottom: 64, // Increased spacing for floating feel
+    lineHeight: 26,
+    letterSpacing: 0.3,
+    paddingHorizontal: 20,
+    zIndex: 10,
   },
   
   startButton: {
-    width: width * 0.85, // Wide button with small margins
-    height: 56,
-    borderRadius: 28,
+    width: width * 0.85,
+    height: 64, // Increased vertical padding for luxury
+    borderRadius: 32,
     marginBottom: 24,
     overflow: 'hidden',
     shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3, // Softer shadow
+    shadowRadius: 20,
     elevation: 8,
   },
   
@@ -334,39 +329,34 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 28,
+    borderRadius: 32,
   },
   
   buttonText: {
-    fontSize: 19, // Slightly larger for better impact
-    fontWeight: '700', // Bolder weight for premium feel
+    fontSize: 17,
+    fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
-    letterSpacing: 0.3, // Subtle letter spacing for premium look
-    textShadowColor: 'rgba(0, 0, 0, 0.2)', // Subtle text shadow
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-    zIndex: 10, // Ensure button text is above stars
+    letterSpacing: 0.5,
+    zIndex: 10,
   },
   
   loginLink: {
-    fontSize: 16,
-    fontWeight: '500', // Medium weight for better hierarchy
-    color: 'rgba(255, 255, 255, 0.9)', // More refined color
+    fontSize: 15,
+    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.7)',
     textDecorationLine: 'underline',
-    letterSpacing: 0.1, // Subtle letter spacing
-    textShadowColor: 'rgba(0, 0, 0, 0.1)', // Very subtle text shadow
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
-    zIndex: 10, // Ensure login link is above stars
+    letterSpacing: 0.2,
+    zIndex: 10,
   },
   
   imageSection: {
-    height: height * 0.4, // Take up bottom 40% of screen
-    justifyContent: 'center',
+    height: height * 0.35, // Slightly smaller to bring closer to content
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingBottom: 20,
-    zIndex: 10, // Ensure image section is above stars
+    paddingTop: 20, // Bring nail closer to content
+    paddingBottom: 40,
+    zIndex: 10,
   },
   
   bottomImage: {

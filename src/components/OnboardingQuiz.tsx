@@ -1191,11 +1191,11 @@ const styles = StyleSheet.create({
     zIndex: 10, // Ensure questions are above stars
   },
   question: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 12, // Reduced from 16 to 12 to bring subtitle closer
+    marginBottom: 12,
     lineHeight: 36,
     letterSpacing: 0.5,
     zIndex: 10, // Ensure question text is above stars
@@ -1312,11 +1312,12 @@ const styles = StyleSheet.create({
     zIndex: 10, // Ensure final header is above stars
   },
   finalTitle: {
-    fontSize: 36,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 16,
+    paddingHorizontal: 16,
     letterSpacing: 0.5,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 2 },
@@ -1488,17 +1489,15 @@ const styles = StyleSheet.create({
     zIndex: 1, // Ensure stars are above background but below content
   },
   infoPageTitle: {
-    fontSize: 36, // Increased for more impact
-    fontWeight: '800', // Bolder for premium feel
+    fontSize: 32,
+    fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 24, // Reduced spacing
-    letterSpacing: 0.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-    lineHeight: 44, // Better line height for readability
-    zIndex: 10, // Ensure title is above stars
+    marginBottom: 24,
+    letterSpacing: 0.3,
+    lineHeight: 42,
+    paddingHorizontal: 16,
+    zIndex: 10,
   },
   statisticContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)', // More subtle background
@@ -1613,14 +1612,11 @@ const styles = StyleSheet.create({
     zIndex: 10, // Ensure button gradient is above stars
   },
   infoPageButtonText: {
-    fontSize: 22, // Larger text
-    fontWeight: '800', // Bolder
-    color: '#FFFFFF', // White text for better contrast with gradient
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
     letterSpacing: 0.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-    zIndex: 10, // Ensure button text is above stars
+    zIndex: 10,
   },
   infoPageSkipLink: {
     paddingVertical: 16,
@@ -1635,14 +1631,15 @@ const styles = StyleSheet.create({
   },
   // Quiz Intro Page Styles
   quizIntroTitle: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '600', // Softer weight for calm feel
     color: '#FFFFFF',
     textAlign: 'center',
-    lineHeight: 40,
-    marginBottom: 16,
-    letterSpacing: 0.5,
-    zIndex: 10, // Ensure quiz intro title is above stars
+    lineHeight: 42, // Improved line spacing
+    marginBottom: 20,
+    letterSpacing: 0.3,
+    paddingHorizontal: 24,
+    zIndex: 10,
   },
   quizIntroSubtitle: {
     fontSize: 18,
@@ -1668,18 +1665,20 @@ const styles = StyleSheet.create({
     zIndex: 10, // Ensure privacy icon is above stars
   },
   privacyText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontWeight: '500',
-    zIndex: 10, // Ensure privacy text is above stars
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.65)', // More refined hierarchy
+    fontWeight: '400', // Lighter weight
+    letterSpacing: 0.2,
+    zIndex: 10,
   },
   animationContainer: {
     width: width * 0.8,
     height: 200,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 40,
-    zIndex: 10, // Ensure animation container is above stars
+    marginBottom: 48, // More breathing room
+    marginTop: 8,
+    zIndex: 10,
   },
 
   quizIntroButton: {

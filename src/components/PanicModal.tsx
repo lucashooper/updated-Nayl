@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { typography, body, bodySmall, caption, buttonText } from '../constants/typography';
 import { usePanicModal } from '../context/PanicModalContext';
 import DeterrentPage from './DeterrentPage';
+import * as HapticTypewriter from '../../modules/expo-haptic-typewriter';
 
 const { width, height } = Dimensions.get('window');
 
@@ -41,7 +42,7 @@ const SPACING = {
   xxxl: 64,
 };
 
-// Premium typewriter component with strategic haptics
+// Premium typewriter component with native Core Haptics - ultra-smooth performance
 const TypewriterText: React.FC<{ 
   messages: string[]; 
   speed?: number; 
@@ -49,21 +50,29 @@ const TypewriterText: React.FC<{
   isVisible: boolean;
 }> = ({ 
   messages, 
-  speed = 4, // Faster for punchy videogame feel (was 12)
+  speed = 4,
   onComplete,
   isVisible
 }) => {
   const [displayedText, setDisplayedText] = useState('');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentIndexRef = useRef(0);
   const charIndexRef = useRef(0);
 
   useEffect(() => {
-    if (!isVisible || !messages || messages.length === 0) {
+    if (!isVisible) {
+      // Clean up when not visible
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      HapticTypewriter.stopTypewriterHaptics();
+      setDisplayedText('');
       return;
     }
 
@@ -74,44 +83,43 @@ const TypewriterText: React.FC<{
 
     const typeNextCharacter = () => {
       const currentMessage = messages[currentIndexRef.current];
+
+      if (!currentMessage) return;
+
       if (charIndexRef.current < currentMessage.length) {
         // Type next character
-        const newText = currentMessage.slice(0, charIndexRef.current + 1);
-        setDisplayedText(newText);
-        
-        // Punchy videogame-style haptics: vibrate on key moments for impact
-        const currentChar = currentMessage[charIndexRef.current];
-        // Haptic on letters (not spaces) for videogame text feel + word boundaries
-        if (currentChar !== ' ' && charIndexRef.current % 2 === 0) {
+        setDisplayedText(prev => currentMessage.slice(0, charIndexRef.current + 1));
+
+        // Try native haptic first, fallback to Expo Haptics
+        try {
+          HapticTypewriter.tickCharacter();
+        } catch {
+          // Fallback for Expo Go
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } else if (currentChar === '\n') {
-          // Stronger haptic on newlines
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
-        
+
         charIndexRef.current++;
       } else {
-        // Message complete, pause before moving to next
+        // Message complete
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        
         if (currentIndexRef.current < messages.length - 1) {
-          // Clear current interval
-          clearInterval(intervalRef.current!);
-          
-          // Strong haptic when message completes
+          // Quick pause for seamless flow
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           
-          // Pause for 1.2 seconds between messages (slightly shorter for premium feel)
-          setTimeout(() => {
+          timeoutRef.current = setTimeout(() => {
             currentIndexRef.current++;
             charIndexRef.current = 0;
             setDisplayedText('');
             
-            // Restart typing for next message
+            // Start next message
             intervalRef.current = setInterval(typeNextCharacter, speed);
-          }, 1200); // 1.2 second pause
+          }, 600);
         } else {
           // All messages complete
-          clearInterval(intervalRef.current!);
-          // Final completion haptic
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
           onComplete?.();
         }
@@ -126,8 +134,13 @@ const TypewriterText: React.FC<{
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      HapticTypewriter.stopTypewriterHaptics();
     };
-  }, [isVisible, speed]); // Added speed to dependencies
+  }, [isVisible]); // Only depend on isVisible to prevent infinite loops
 
   return (
     <View style={styles.typewriterContainer}>
@@ -252,7 +265,7 @@ const PanicModal: React.FC<{ navigation?: any }> = ({ navigation }) => {
                 "IS THE SHORT\nRELIEF WORTH\nTHE SHAME?",
                 "YOU CAN DO THIS,\nYOU ARE NOT\nALONE."
               ]}
-              speed={8} // Punchy videogame-style typing with haptic feedback
+              speed={4}
               onComplete={handleTypewriterComplete}
               isVisible={showTypewriter}
             />
