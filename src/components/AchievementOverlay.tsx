@@ -354,9 +354,8 @@ const AchievementOverlay: React.FC<AchievementOverlayProps> = ({
               )}
             </View>
             
-            {/* Achievement header with centered title/day count and trophy below */}
+            {/* Achievement header with centered title/day count */}
             <View style={styles.achievementHeader}>
-              {/* Centered title and day count */}
               <View style={styles.titleContainer}>
                 <Text style={styles.achievementTitle}>
                   {achievement.title}
@@ -364,17 +363,6 @@ const AchievementOverlay: React.FC<AchievementOverlayProps> = ({
                 <Text style={styles.achievementDayCount}>
                   {achievement.maxProgress}/{achievement.maxProgress} days
                 </Text>
-              </View>
-              
-              {/* Trophy icon positioned below the title */}
-              <View style={styles.headerTrophyContainer}>
-                <View style={styles.headerTrophyGlowContainer}>
-                  <Image 
-                    source={require('../../assets/cooler-trophy-icon.webp')} 
-                    style={styles.headerTrophyIcon}
-                    resizeMode="contain"
-                  />
-                </View>
               </View>
             </View>
             

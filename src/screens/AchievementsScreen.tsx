@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useAchievements } from '../context/AchievementContext';
 import { TYPOGRAPHY } from '../constants/theme';
+import { typography } from '../constants/typography';
 import hapticService, { HapticType, HapticIntensity } from '../services/hapticService';
 import AchievementOverlay from '../components/AchievementOverlay';
 import AchievementSkeleton from '../components/AchievementSkeleton';
@@ -191,40 +192,39 @@ const createStyles = (themeColors: any) => StyleSheet.create({
     elevation: 2,
   },
   header: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.md,
     zIndex: 10,
   },
   headerTop: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     position: 'relative',
   },
-
-  titleContainer: {
+  backButton: {
     position: 'absolute',
     left: 0,
-    right: 0,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
+  titleContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   screenTitle: {
-    ...TYPOGRAPHY.displayMedium,
+    ...typography.displayMedium,
     color: themeColors.primaryText,
     textAlign: 'center',
-    fontSize: 32, // Reduced from 36 to 32 for more premium, subtle appearance
+    fontSize: 36,
     fontWeight: '700',
-    letterSpacing: 0.5, // Improved letter spacing
-    // Premium layered shadows - base shadow + accent shadow
+    letterSpacing: 0.5,
     textShadowColor: themeColors.primaryBackground,
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
-    // Additional premium accent shadow
     shadowColor: themeColors.primaryAccent,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
@@ -276,11 +276,8 @@ const createStyles = (themeColors: any) => StyleSheet.create({
     opacity: 0.8,
   },
   content: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingTop: SPACING.lg,
+    flex: 1,
+    paddingTop: SPACING.sm,
   },
   contentContainer: {
     paddingBottom: SPACING.lg,
@@ -399,38 +396,6 @@ const createStyles = (themeColors: any) => StyleSheet.create({
   bottomSpacing: {
     height: 100,
   },
-  // Test button styles
-  testButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.xl,
-    paddingHorizontal: SPACING.sm,
-  },
-  testButton: {
-    width: '48%',
-    borderRadius: SPACING.md,
-    overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  testButtonGradient: {
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  testButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
 });
 
 export default function AchievementsScreen() {
@@ -451,8 +416,6 @@ export default function AchievementsScreen() {
     currentOverlay,
     isOverlayVisible,
     hideAchievementOverlay,
-    resetAllAchievements,
-    unlockNextAchievement
   } = useAchievements();
   
   // Local state for unlocked achievements (fallback)
@@ -615,9 +578,9 @@ export default function AchievementsScreen() {
           ))}
         </View>
         
-        {/* Content - ABSOLUTE POSITIONING to prevent jolting */}
+        {/* Content */}
         <ScrollView 
-          style={[styles.content, { top: insets.top + 180 }]} 
+          style={styles.content} 
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.contentContainer}
         >
@@ -669,13 +632,11 @@ export default function AchievementsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Consistent background gradient */}
       <LinearGradient
         colors={colors.backgroundGradient}
         style={styles.backgroundGradient}
       />
       
-      {/* Subtle starfield effect */}
       <View style={styles.starfield}>
         {starPositions.map((star, index) => (
           <View
@@ -685,7 +646,7 @@ export default function AchievementsScreen() {
               {
                 left: star.x,
                 top: star.y,
-                opacity: star.opacity, // Use full opacity for maximum visibility
+                opacity: star.opacity,
                 width: star.size,
                 height: star.size,
                 borderRadius: star.size / 2,
@@ -695,33 +656,17 @@ export default function AchievementsScreen() {
         ))}
       </View>
       
-      {/* Header - ABSOLUTE POSITIONING to prevent jolting */}
-      <View style={[styles.header, { top: insets.top + 20 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
         <View style={styles.headerTop}>
-          {/* Centered title - using absolute positioning for perfect centering */}
-          <View style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Text style={[
-              styles.screenTitle, 
-              { 
-                color: colors.primaryText,
-                // Premium layered shadows - base shadow + accent shadow
-                textShadowColor: colors.primaryBackground,
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 2,
-                // Additional premium accent shadow
-                shadowColor: colors.primaryAccent,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.1,
-                shadowRadius: 1,
-              }
-            ]}>Achievements</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={28} color={colors.primaryText} />
+          </TouchableOpacity>
+          <Text style={[styles.screenTitle, { color: colors.primaryText }]}>
+            Achievements
+          </Text>
         </View>
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
@@ -731,12 +676,9 @@ export default function AchievementsScreen() {
               end={{ x: 1, y: 0 }}
               style={[
                 styles.progressFill, 
-                { 
-                  width: `${(unlockedCount / achievements.length) * 100}%`
-                }
+                { width: `${(unlockedCount / achievements.length) * 100}%` }
               ]} 
             >
-              {/* Inner glow effect */}
               <View style={styles.progressGlow} />
             </LinearGradient>
           </View>
@@ -746,50 +688,17 @@ export default function AchievementsScreen() {
         </View>
       </View>
       
-      {/* Content - ABSOLUTE POSITIONING to prevent jolting */}
       <ScrollView 
-        style={[styles.content, { top: insets.top + 180 }]} 
+        style={styles.content} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
       >
-        {/* Test Buttons for Development */}
-        <View style={styles.testButtonsContainer}>
-          <TouchableOpacity 
-            style={styles.testButton} 
-            onPress={() => unlockNextAchievement()}
-          >
-            <LinearGradient
-              colors={['#10B981', '#059669', '#047857']}
-              style={styles.testButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.testButtonText}>🔓 Unlock Next Achievement</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.testButton} 
-            onPress={() => resetAllAchievements()}
-          >
-            <LinearGradient
-              colors={['#EF4444', '#DC2626', '#B91C1C']}
-              style={styles.testButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.testButtonText}>🔄 Reset All Achievements</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-        
         <View style={styles.achievementsGrid}>
           {achievements.map((achievement, index) => (
             <AchievementBadge
               key={index}
               {...achievement}
               index={index}
-              
             />
           ))}
         </View>

@@ -35,12 +35,6 @@ interface NaylProUpgradeScreenProps {
 
 type PlanId = 'weekly' | 'monthly' | 'yearly';
 
-const PLAN_LABELS: Record<PlanId, { title: string; duration: string }> = {
-  weekly: { title: 'Weekly', duration: '1 week' },
-  monthly: { title: 'Monthly', duration: '1 month' },
-  yearly: { title: 'Yearly', duration: '1 year' },
-};
-
 const NaylProUpgradeScreen: React.FC<NaylProUpgradeScreenProps> = ({
   onUnlockPro,
 }) => {
@@ -352,7 +346,7 @@ const NaylProUpgradeScreen: React.FC<NaylProUpgradeScreenProps> = ({
 
               {/* Yearly Option */}
               <TouchableOpacity
-                style={[styles.purchaseOption, styles.purchaseOptionHighlighted, selectedPlan === 'yearly' && styles.purchaseOptionSelected]}
+                style={[styles.purchaseOption, selectedPlan === 'yearly' && styles.purchaseOptionSelected]}
                 onPress={() => setSelectedPlan('yearly')}
                 activeOpacity={0.8}
               >
@@ -395,12 +389,7 @@ const NaylProUpgradeScreen: React.FC<NaylProUpgradeScreenProps> = ({
 
             {/* Auto-renewal disclosure (required by Guideline 3.1.2) */}
             <Text style={styles.subscriptionDisclosure}>
-              {`Nayl Pro – ${PLAN_LABELS[selectedPlan].title} Plan\n`}
-              {`Subscription length: ${PLAN_LABELS[selectedPlan].duration}. `}
-              {'Payment will be charged to your Apple ID account at confirmation of purchase. '
-              + 'Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. '
-              + 'Account will be charged for renewal within 24 hours prior to the end of the current period. '
-              + 'Manage or cancel your subscription in your Apple ID Account Settings.'}
+              {`${getPriceString(selectedPlan)} · Auto-renews unless cancelled 24h before period ends. Manage in Apple ID Settings.`}
             </Text>
 
             {/* Footer Links */}
@@ -476,22 +465,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   iconGlowContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 20,
-    backgroundColor: 'rgba(59, 130, 246, 0.05)',
+    width: 130,
+    height: 130,
+    borderRadius: 28,
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 6,
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 8,
     marginBottom: 20,
   },
   appIcon: {
-    width: 80,
-    height: 80,
+    width: 110,
+    height: 110,
   },
   iconSubtext: {
     fontSize: 18,
@@ -575,24 +564,15 @@ const styles = StyleSheet.create({
     minHeight: 70,
     minWidth: 80,
   },
-  purchaseOptionHighlighted: {
-    borderColor: '#7C3AED',
-    borderWidth: 2,
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 8,
-  },
   purchaseOptionSelected: {
-    borderColor: '#8B5CF6',
-    borderWidth: 3,
-    backgroundColor: 'rgba(124, 58, 237, 0.15)',
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 12,
+    borderColor: '#A855F7',
+    borderWidth: 2.5,
+    backgroundColor: 'rgba(124, 58, 237, 0.12)',
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 10,
   },
   popularTag: {
     backgroundColor: '#7C3AED',
@@ -628,15 +608,6 @@ const styles = StyleSheet.create({
     marginBottom: 1,
     textAlign: 'center',
   },
-  purchaseOptionSelected: {
-    borderColor: '#A855F7',
-    borderWidth: 2,
-    shadowColor: '#A855F7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
-    shadowRadius: 8,
-    elevation: 10,
-  },
   purchaseOptionSavings: {
     fontSize: 11,
     fontWeight: '600',
@@ -648,13 +619,13 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   subscriptionDisclosure: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#64748B',
     textAlign: 'center',
-    lineHeight: 14,
-    marginTop: 8,
-    marginBottom: 4,
-    paddingHorizontal: 4,
+    lineHeight: 16,
+    marginTop: 10,
+    marginBottom: 6,
+    paddingHorizontal: 8,
   },
   footerLinks: {
     flexDirection: 'row',

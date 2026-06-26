@@ -1,5 +1,8 @@
 import { supabase } from '../lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import sessionService from './sessionService';
+
+export const PROFILE_CACHE_KEY = '@nayl_profile_cache';
 
 export interface ProfileData {
   profile_picture_url?: string;
@@ -111,6 +114,26 @@ class ProfileService {
     }
   }
 
+  async getCachedProfileData(): Promise<ProfileData | null> {
+    try {
+      const cached = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
+      if (cached) {
+        return JSON.parse(cached) as ProfileData;
+      }
+    } catch {
+      // Ignore cache read errors
+    }
+    return null;
+  }
+
+  private async cacheProfileData(data: ProfileData): Promise<void> {
+    try {
+      await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data));
+    } catch {
+      // Non-critical
+    }
+  }
+
   async getProfileData(): Promise<ProfileData> {
     try {
       const userId = await this.getUserId();
@@ -129,13 +152,16 @@ class ProfileService {
       // Get longest streak from session service for more accurate data
       const longestStreakSeconds = await sessionService.getLongestStreakSeconds();
 
-      return {
+      const profile: ProfileData = {
         profile_picture_url: data?.profile_picture_url,
         profile_name: data?.profile_name || 'Your Name',
         longest_streak_seconds: longestStreakSeconds,
         consecutive_days: data?.consecutive_days || 0,
-        total_days_logged_in: data?.total_days_logged_in || 0
+        total_days_logged_in: data?.total_days_logged_in || 0,
       };
+
+      await this.cacheProfileData(profile);
+      return profile;
     } catch (error) {
       console.error('Error getting profile data:', error);
       return {

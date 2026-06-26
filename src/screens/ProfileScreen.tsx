@@ -59,6 +59,19 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const loadBasicProfileData = async () => {
     try {
+      const cached = await profileService.getCachedProfileData();
+      if (cached) {
+        setProfileData({
+          profile_name: cached.profile_name || 'Your Name',
+          longest_streak_seconds: cached.longest_streak_seconds || 0,
+          consecutive_days: cached.consecutive_days || 0,
+          total_days_logged_in: cached.total_days_logged_in || 0,
+        });
+        if (cached.profile_picture_url) {
+          setProfileImage(cached.profile_picture_url);
+        }
+      }
+
       const existingProfile = await profileService.getProfileData();
       if (existingProfile) {
         setProfileData({

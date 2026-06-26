@@ -49,16 +49,21 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   useEffect(() => {
     const loadProfilePicture = async () => {
       try {
+        const cached = await profileService.getCachedProfileData();
+        if (cached) {
+          setProfilePictureUrl(cached.profile_picture_url || null);
+          setProfileName(cached.profile_name || 'Your Name');
+          setIsLoading(false);
+        }
+
         const profileData = await profileService.getProfileData();
-        console.log('ProfileHeader: Loaded profile data:', {
-          profile_picture_url: profileData.profile_picture_url,
-          profile_name: profileData.profile_name
-        });
         setProfilePictureUrl(profileData.profile_picture_url || null);
         setProfileName(profileData.profile_name || 'Your Name');
       } catch (error) {
         console.error('Error loading profile picture:', error);
-        setProfilePictureUrl(null);
+        if (!profilePictureUrl) {
+          setProfilePictureUrl(null);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -80,11 +85,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   const sizeStyles = getSizeStyles();
 
-  if (isLoading) {
-    // Show a placeholder while loading
+  if (isLoading && !profilePictureUrl) {
     return (
       <View style={[styles.container, sizeStyles]}>
-        <View style={[styles.placeholder, { backgroundColor: colors.primaryAccent }]} />
+        <BrandLogo size={size} />
       </View>
     );
   }
@@ -97,6 +101,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           source={{ uri: profilePictureUrl }} 
           style={[styles.profileImage, sizeStyles]}
           resizeMode="cover"
+          fadeDuration={0}
         />
       );
     }

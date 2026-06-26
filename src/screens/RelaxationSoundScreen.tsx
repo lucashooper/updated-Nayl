@@ -1,25 +1,22 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  SafeAreaView,
-  Alert,
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme, useThemeGuaranteed } from '../context/ThemeContext';
+import { useThemeGuaranteed } from '../context/ThemeContext';
 import { useMeditation } from '../context/MeditationContext';
 import { COLORS } from '../constants/theme';
-import { body, buttonText } from '../constants/typography';
+import { buttonText } from '../constants/typography';
 
 const { width, height } = Dimensions.get('window');
 
-// Spacing constants (4-point grid system)
 const SPACING = {
   xs: 4,
   sm: 8,
@@ -41,134 +38,119 @@ interface RelaxationSoundScreenProps {
   navigation: any;
 }
 
+const audioFiles = {
+  campfire: require('../../assets/relaxation-sounds/campfire-sounds-short.mp3'),
+  rain: require('../../assets/relaxation-sounds/short-rain-sounds.mp3'),
+  sea: require('../../assets/relaxation-sounds/ocean-waves.mp3'),
+  'white-noise': require('../../assets/relaxation-sounds/white-noise.mp3'),
+};
+
+const backgroundImages = {
+  campfire: require('../../assets/relaxation-sounds/campfire-image.jpg'),
+  rain: require('../../assets/relaxation-sounds/rain-image.jpg'),
+  sea: require('../../assets/relaxation-sounds/rain-image.jpg'),
+  'white-noise': require('../../assets/relaxation-sounds/rain-image.jpg'),
+};
+
+const titles = {
+  campfire: 'Campfire',
+  rain: 'Rain',
+  sea: 'Ocean Waves',
+  'white-noise': 'White Noise',
+};
+
+const icons = {
+  campfire: require('../../assets/library-sound-icons/new-campfire-icon.webp'),
+  rain: require('../../assets/library-sound-icons/rain-icon.webp'),
+  sea: require('../../assets/library-sound-icons/new-sea-icon.webp'),
+  'white-noise': require('../../assets/library-sound-icons/white-noise-icon.webp'),
+};
+
 const RelaxationSoundScreen: React.FC<RelaxationSoundScreenProps> = ({ route, navigation }) => {
-  const { colors } = useThemeGuaranteed();
+  useThemeGuaranteed();
   const { setIsMeditationActive } = useMeditation();
   const { soundType } = route.params;
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isAudioLoaded, setIsAudioLoaded] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const isStoppingRef = useRef(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [loopCount, setLoopCount] = useState(0);
-  const startTimeRef = useRef<number>(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Audio file mapping - using the correct files for each type
-  const audioFiles = {
-    campfire: require('../../assets/relaxation-sounds/campfire-sounds-short.mp3'),
-    rain: require('../../assets/relaxation-sounds/short-rain-sounds.mp3'),
-    sea: require('../../assets/relaxation-sounds/ocean-waves.mp3'), // Using ocean-waves.mp3 for sea
-    'white-noise': require('../../assets/relaxation-sounds/white-noise.mp3'), // Using white-noise.mp3 for white noise
-  };
+  const stopAndUnload = useCallback(async () => {
+    const currentSound = soundRef.current;
+    if (!currentSound) return;
 
-  // Background image mapping
-  const backgroundImages = {
-    campfire: require('../../assets/relaxation-sounds/campfire-image.jpg'),
-    rain: require('../../assets/relaxation-sounds/rain-image.jpg'),
-    sea: require('../../assets/relaxation-sounds/rain-image.jpg'), // Using rain image for sea for now
-    'white-noise': require('../../assets/relaxation-sounds/rain-image.jpg'), // Using rain image for white noise for now
-  };
+    soundRef.current = null;
+    try {
+      await currentSound.stopAsync();
+    } catch {
+      // Already stopped
+    }
+    try {
+      await currentSound.unloadAsync();
+    } catch {
+      // Already unloaded
+    }
+  }, []);
 
-  // Title mapping
-  const titles = {
-    campfire: 'Campfire',
-    rain: 'Rain',
-    sea: 'Ocean Waves',
-    'white-noise': 'White Noise',
-  };
+  const stopAudio = useCallback(async () => {
+    if (isStoppingRef.current) return;
+    isStoppingRef.current = true;
 
-  // Icon mapping
-  const icons = {
-    campfire: require('../../assets/library-sound-icons/new-campfire-icon.webp'),
-    rain: require('../../assets/library-sound-icons/rain-icon.webp'),
-    sea: require('../../assets/library-sound-icons/new-sea-icon.webp'),
-    'white-noise': require('../../assets/library-sound-icons/white-noise-icon.webp'),
-  };
+    await stopAndUnload();
+    setIsMeditationActive(false);
+    navigation.goBack();
+  }, [navigation, setIsMeditationActive, stopAndUnload]);
 
-  // Set meditation active to hide footer
   useEffect(() => {
     setIsMeditationActive(true);
+
+    const loadAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          staysActiveInBackground: false,
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
+
+        const audioFile = audioFiles[soundType];
+        if (!audioFile) return;
+
+        const { sound: audioSound } = await Audio.Sound.createAsync(
+          audioFile,
+          { shouldPlay: true, isLooping: true },
+        );
+
+        if (isStoppingRef.current) {
+          await audioSound.unloadAsync();
+          return;
+        }
+
+        soundRef.current = audioSound;
+
+        audioSound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.positionMillis !== undefined) {
+            setElapsedTime(status.positionMillis);
+          }
+        });
+      } catch (error) {
+        console.error('Error loading audio:', error);
+      }
+    };
+
+    loadAudio();
+
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      stopAndUnload();
+      setIsMeditationActive(false);
+    });
+
     return () => {
+      unsubscribe();
+      stopAndUnload();
       setIsMeditationActive(false);
     };
-  }, [setIsMeditationActive]);
-
-  useEffect(() => {
-    setupAudio();
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    // Fade in animation removed - no longer needed
-  }, []);
-
-  const setupAudio = async () => {
-    try {
-      // Configure audio mode for background playback
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        staysActiveInBackground: true,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-      });
-      
-      loadAudio();
-    } catch (error) {
-      console.error('Error setting up audio:', error);
-    }
-  };
-
-  const loadAudio = async () => {
-    try {
-      const audioFile = audioFiles[soundType as keyof typeof audioFiles];
-      if (!audioFile) {
-        console.error('Audio file not found for sound type:', soundType);
-        return;
-      }
-
-      const { sound: audioSound } = await Audio.Sound.createAsync(
-        audioFile,
-        { shouldPlay: true, isLooping: true }
-      );
-      
-      setSound(audioSound);
-      setIsPlaying(true);
-
-      // Get duration
-      const status = await audioSound.getStatusAsync();
-      if (status.isLoaded) {
-        // setDuration(status.durationMillis || 0); // This line was removed as per new_code
-      }
-
-      // Set up position tracking
-      audioSound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.positionMillis) {
-          setElapsedTime(status.positionMillis);
-        }
-      });
-
-    } catch (error) {
-      console.error('Error loading audio:', error);
-    }
-  };
-
-  const stopAudio = async () => {
-    try {
-      if (sound) {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-        setIsPlaying(false);
-      }
-      navigation.goBack();
-    } catch (error) {
-      console.error('Error stopping audio:', error);
-    }
-  };
+  }, [navigation, setIsMeditationActive, soundType, stopAndUnload]);
 
   const formatTime = (milliseconds: number) => {
     const totalSeconds = Math.floor(milliseconds / 1000);
@@ -177,22 +159,17 @@ const RelaxationSoundScreen: React.FC<RelaxationSoundScreenProps> = ({ route, na
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const handleBackPress = () => {
-    stopAudio();
-  };
-
   return (
     <View style={styles.container}>
-      {/* Background Image */}
       <Image
-        source={backgroundImages[soundType as keyof typeof backgroundImages] || backgroundImages.campfire}
+        source={backgroundImages[soundType] || backgroundImages.campfire}
         style={styles.backgroundImage}
         resizeMode="cover"
+        fadeDuration={0}
       />
 
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+        <TouchableOpacity style={styles.backButton} onPress={stopAudio}>
           <LinearGradient
             colors={['#8B5CF6', '#A78BFA']}
             style={styles.backButtonGradient}
@@ -202,19 +179,18 @@ const RelaxationSoundScreen: React.FC<RelaxationSoundScreenProps> = ({ route, na
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
       <View style={styles.content}>
-        {/* Audio Info */}
         <View style={styles.audioInfo}>
           <View style={styles.audioIconContainer}>
-            <Image 
-              source={icons[soundType as keyof typeof icons] || icons.campfire} 
+            <Image
+              source={icons[soundType] || icons.campfire}
               style={styles.audioIcon}
               resizeMode="contain"
+              fadeDuration={0}
             />
           </View>
           <Text style={styles.audioTitle}>
-            {titles[soundType as keyof typeof titles] || titles.campfire}
+            {titles[soundType] || titles.campfire}
           </Text>
           <Text style={styles.elapsedTime}>
             {formatTime(elapsedTime)} elapsed time
@@ -222,7 +198,6 @@ const RelaxationSoundScreen: React.FC<RelaxationSoundScreenProps> = ({ route, na
         </View>
       </View>
 
-      {/* Bottom Control Panel */}
       <View style={styles.bottomPanel}>
         <TouchableOpacity style={styles.stopButton} onPress={stopAudio}>
           <LinearGradient
@@ -259,7 +234,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xxl + SPACING.lg, // Increased from SPACING.lg to account for status bar
+    paddingTop: SPACING.xxl + SPACING.lg,
     paddingBottom: SPACING.md,
     zIndex: 10,
     backgroundColor: 'transparent',

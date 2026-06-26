@@ -1,4 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+  useCallback,
+  useRef,
+} from 'react';
 import sessionService from '../services/sessionService';
 
 interface StreakContextType {
@@ -19,91 +28,100 @@ interface StreakProviderProps {
 export const StreakProvider: React.FC<StreakProviderProps> = ({ children }) => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const streakStartMsRef = useRef<number>(Date.now());
 
-  // Function to refresh streak data from database
-  const refreshStreakData = useCallback(async () => {
-    try {
-      const currentStreak = await sessionService.getCurrentStreakSeconds();
-      setElapsedSeconds(currentStreak);
-    } catch (error) {
-      console.error('StreakContext: Error refreshing streak data:', error);
-    }
+  const computeElapsed = useCallback(() => {
+    return Math.max(0, Math.floor((Date.now() - streakStartMsRef.current) / 1000));
   }, []);
 
-  // Function to immediately set elapsed seconds (for instant reset)
+  const syncStartTimeFromDatabase = useCallback(async () => {
+    try {
+      const session = await sessionService.getCurrentSession();
+      if (session?.start_time) {
+        streakStartMsRef.current = new Date(session.start_time).getTime();
+      }
+      setElapsedSeconds(computeElapsed());
+    } catch (error) {
+      console.error('StreakContext: Error syncing start time:', error);
+    }
+  }, [computeElapsed]);
+
+  const refreshStreakData = useCallback(async () => {
+    await syncStartTimeFromDatabase();
+  }, [syncStartTimeFromDatabase]);
+
+  // Instantly set elapsed time by adjusting the local anchor — no DB round-trip
   const setElapsedSecondsDirectly = useCallback((seconds: number) => {
+    streakStartMsRef.current = Date.now() - seconds * 1000;
     setElapsedSeconds(seconds);
   }, []);
 
-  // Function to update streak start time
   const updateStreakStartTime = useCallback(async (newStartTime: Date) => {
     try {
       setIsLoading(true);
-      
-      // Update the database
       await sessionService.updateStreakStartTime(newStartTime);
-      
-      // Immediately refresh the streak data
-      await refreshStreakData();
-      
+      streakStartMsRef.current = newStartTime.getTime();
+      setElapsedSeconds(computeElapsed());
       setIsLoading(false);
     } catch (error) {
       console.error('StreakContext: Error updating streak start time:', error);
       setIsLoading(false);
       throw error;
     }
-  }, [refreshStreakData]);
+  }, [computeElapsed]);
 
-  // Function to manually update the current streak in the database
   const updateCurrentStreak = useCallback(async () => {
     try {
       setIsLoading(true);
-      await sessionService.updateSession(elapsedSeconds);
+      const elapsed = computeElapsed();
+      await sessionService.updateSession(elapsed);
       setIsLoading(false);
     } catch (error) {
       console.error('StreakContext: Error updating current streak:', error);
       setIsLoading(false);
       throw error;
     }
-  }, [elapsedSeconds]);
+  }, [computeElapsed]);
 
-  // Initialize streak data on mount
   useEffect(() => {
-    refreshStreakData();
-  }, [refreshStreakData]);
+    syncStartTimeFromDatabase();
+  }, [syncStartTimeFromDatabase]);
 
-  // Set up timer to update streak every second
+  // Tick locally from anchor — avoids DB race conditions on reset
   useEffect(() => {
-    const timer = setInterval(async () => {
-      try {
-        const currentStreak = await sessionService.getCurrentStreakSeconds();
-        setElapsedSeconds(currentStreak);
-        
-        // Update the session in the database every 60 seconds instead of every 10 seconds
-        if (currentStreak > 0 && currentStreak % 60 === 0) {
-          await sessionService.updateSession(currentStreak);
-        }
-        
-        // Update longest streak if needed (every 5 minutes instead of every 30 seconds)
-        if (currentStreak > 0 && currentStreak % 300 === 0) {
-          await sessionService.updateLongestStreakIfNeeded(currentStreak);
-        }
-      } catch (error) {
-        console.error('StreakContext: Error updating timer:', error);
+    const timer = setInterval(() => {
+      const elapsed = computeElapsed();
+      setElapsedSeconds(elapsed);
+
+      if (elapsed > 0 && elapsed % 60 === 0) {
+        sessionService.updateSession(elapsed).catch(() => undefined);
+      }
+      if (elapsed > 0 && elapsed % 300 === 0) {
+        sessionService.updateLongestStreakIfNeeded(elapsed).catch(() => undefined);
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [computeElapsed]);
 
-  const value: StreakContextType = useMemo(() => ({
-    elapsedSeconds,
-    refreshStreakData,
-    setElapsedSecondsDirectly,
-    updateStreakStartTime,
-    updateCurrentStreak,
-    isLoading,
-  }), [elapsedSeconds, refreshStreakData, setElapsedSecondsDirectly, updateStreakStartTime, updateCurrentStreak, isLoading]);
+  const value: StreakContextType = useMemo(
+    () => ({
+      elapsedSeconds,
+      refreshStreakData,
+      setElapsedSecondsDirectly,
+      updateStreakStartTime,
+      updateCurrentStreak,
+      isLoading,
+    }),
+    [
+      elapsedSeconds,
+      refreshStreakData,
+      setElapsedSecondsDirectly,
+      updateStreakStartTime,
+      updateCurrentStreak,
+      isLoading,
+    ],
+  );
 
   return (
     <StreakContext.Provider value={value}>

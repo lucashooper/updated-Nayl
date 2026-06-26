@@ -137,36 +137,34 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }))
   );
 
-  // NEW: Load dashboard data using the optimized SessionService
+  // Load dashboard: use cached data instantly, then sync from network
   const loadDashboardData = useCallback(async () => {
     try {
-      // LIGHTNING FAST: Show data instantly from memory
-      const localDashboard = await sessionService.getLocalDashboard();
-      setDashboardData(localDashboard);
-      setConsecutiveDays(localDashboard.consecutive_days);
-      // NEW LOGIC: Weekly check-ins now represent successful days (no nail-biting episodes)
-      // Instead of just days logged in, this shows actual progress toward the goal
-      const weeklyArray = Array(7).fill(false).map((_, index) => index < localDashboard.successful_days_this_week);
-      setWeeklyCheckIns(weeklyArray);
-      setIsInitialized(true);
-      setIsLoading(false);
-      
-      // Background sync (non-blocking, user doesn't wait)
-      setTimeout(async () => {
-        try {
-          const data = await sessionService.getDashboardData();
-          if (data) {
-            setDashboardData(data);
-            setConsecutiveDays(data.consecutive_days);
-            // NEW LOGIC: Weekly check-ins now represent successful days (no nail-biting episodes)
-            const weeklyArray = Array(7).fill(false).map((_, index) => index < data.successful_days_this_week);
-            setWeeklyCheckIns(weeklyArray);
-          }
-        } catch (dbError) {
-          console.warn('Background sync failed, using local data:', dbError);
-        }
-      }, 50); // Minimal delay to not block UI
-      
+      const applyDashboard = (data: NonNullable<Awaited<ReturnType<typeof sessionService.getDashboardData>>>) => {
+        setDashboardData(data);
+        setConsecutiveDays(data.consecutive_days);
+        const weeklyArray = Array(7).fill(false).map(
+          (_, index) => index < data.successful_days_this_week,
+        );
+        setWeeklyCheckIns(weeklyArray);
+      };
+
+      const cached = await sessionService.getLocalDashboard();
+      if (cached) {
+        applyDashboard(cached);
+        setIsInitialized(true);
+        setIsLoading(false);
+      }
+
+      const data = await sessionService.getDashboardData();
+      if (data) {
+        applyDashboard(data);
+        setIsInitialized(true);
+        setIsLoading(false);
+      } else if (!cached) {
+        setIsInitialized(true);
+        setIsLoading(false);
+      }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       setIsInitialized(true);
@@ -477,16 +475,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       // Single subtle haptic feedback
       hapticService.trigger(HapticType.MEDIUM_TAP, HapticIntensity.NORMAL);
       
-      // Immediately reset UI to zero for instant feedback
+      // Immediately reset UI — local anchor prevents timer flicker
       setElapsedSecondsDirectly(0);
       setIsResetting(false);
       setResetAnimationSeconds(0);
       setIsResetModalVisible(false);
       
-      // Reset the session in the database in background
       await sessionService.resetSession(trigger);
-      
-      // Reload dashboard to reflect the reset
       await loadDashboardData();
     } catch (error) {
       console.error('Error resetting session:', error);

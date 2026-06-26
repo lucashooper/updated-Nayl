@@ -348,6 +348,7 @@ const LibraryScreen: React.FC = () => {
                   source={require('../../assets/library-sound-icons/rain-icon.webp')} 
                   style={styles.relaxationIcon}
                   resizeMode="contain"
+                  fadeDuration={0}
                 />
               </View>
               <Text style={styles.relaxationLabel}>Rain</Text>
@@ -359,6 +360,7 @@ const LibraryScreen: React.FC = () => {
                   source={require('../../assets/library-sound-icons/new-sea-icon.webp')} 
                   style={styles.relaxationIcon}
                   resizeMode="contain"
+                  fadeDuration={0}
                 />
               </View>
               <Text style={styles.relaxationLabel}>Ocean Waves</Text>
@@ -370,6 +372,7 @@ const LibraryScreen: React.FC = () => {
                   source={require('../../assets/library-sound-icons/new-campfire-icon.webp')} 
                   style={styles.relaxationIcon}
                   resizeMode="contain"
+                  fadeDuration={0}
                 />
               </View>
               <Text style={styles.relaxationLabel}>Campfire</Text>
@@ -381,6 +384,7 @@ const LibraryScreen: React.FC = () => {
                   source={require('../../assets/library-sound-icons/white-noise-icon.webp')} 
                   style={styles.relaxationIcon}
                   resizeMode="contain"
+                  fadeDuration={0}
                 />
               </View>
               <Text style={styles.relaxationLabel}>White Noise</Text>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -43,6 +43,8 @@ import { Ionicons } from '@expo/vector-icons';
 // Import constants
 import { COLORS } from './src/constants/theme';
 import hapticService, { HapticType, HapticIntensity } from './src/services/hapticService';
+import { preloadCriticalAssets, preloadDeferredAssets } from './src/utils/assetPreloader';
+import AppLoadingScreen from './src/components/AppLoadingScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -64,8 +66,11 @@ function AppContent() {
   const { isPanicModalVisible } = usePanicModal();
   const { isMeditationActive } = useMeditation();
   
-  // State to track if we're on an onboarding screen
   const [isOnboardingScreen, setIsOnboardingScreen] = useState(false);
+
+  useEffect(() => {
+    preloadDeferredAssets();
+  }, []);
   
   // Removed problematic Image.prefetch that was causing URL request handler errors
   
@@ -311,56 +316,42 @@ function ThemeAwareAppContent() {
   
   // Don't render until theme is ready and colors are valid
   if (!isReady || !colors || typeof colors !== 'object') {
-    console.log('⏳ Theme not ready yet, showing loading state');
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: '#000000' }]}>
-        <Text style={[styles.loadingText, { color: '#FFFFFF' }]}>Loading Nayl...</Text>
-        <StatusBar style="light" backgroundColor="#000000" />
-      </View>
-    );
+    return <AppLoadingScreen />;
   }
   
   // Additional validation
   if (!colors.primaryBackground || !colors.primaryText) {
-    console.log('⚠️ Theme colors not fully loaded, showing loading state');
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: '#000000' }]}>
-        <Text style={[styles.loadingText, { color: '#FFFFFF' }]}>Loading theme...</Text>
-        <StatusBar style="light" backgroundColor="#000000" />
-      </View>
-    );
+    return <AppLoadingScreen />;
   }
-  
-  console.log('✅ Theme is ready, rendering app content');
   return <AppContent />;
 }
 
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
 
   useEffect(() => {
-    async function loadFonts() {
+    async function loadResources() {
       try {
-        await Font.loadAsync({
-          'Inter': require('./assets/fonts/Inter-Regular.ttf'),
-        });
-        setFontsLoaded(true);
+        await Promise.all([
+          Font.loadAsync({
+            'Inter': require('./assets/fonts/Inter-Regular.ttf'),
+          }),
+          preloadCriticalAssets(),
+        ]);
       } catch (error) {
-        console.log('Font loading error:', error);
+        console.log('Resource loading error:', error);
+      } finally {
         setFontsLoaded(true);
+        setAssetsLoaded(true);
       }
     }
 
-    loadFonts();
+    loadResources();
   }, []);
 
-  if (!fontsLoaded) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading Nayl...</Text>
-        <StatusBar style="light" backgroundColor="#000000" />
-      </View>
-    );
+  if (!fontsLoaded || !assetsLoaded) {
+    return <AppLoadingScreen />;
   }
 
   return (
@@ -383,17 +374,3 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontFamily: Platform.OS === 'web' ? 'Inter, sans-serif' : 'Inter',
-  },
-});

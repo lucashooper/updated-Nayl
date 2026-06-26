@@ -66,8 +66,8 @@ public class ExpoHapticTypewriterModule: Module {
       let time = Double(i) * speed / 1000.0 // Convert ms to seconds
       
       // Sharp, crisp tap for each character
-      let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.8)
-      let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.9)
+      let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.9)
+      let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.85)
       
       let event = CHHapticEvent(
         eventType: .hapticTransient,
@@ -92,9 +92,9 @@ public class ExpoHapticTypewriterModule: Module {
     guard let engine = hapticEngine else { return }
     
     do {
-      // Ultra-light, crisp tick
-      let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.6)
-      let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1.0)
+      // Sharp, punchy tick — QUITTR-style per-character feedback
+      let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.92)
+      let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.85)
       
       let event = CHHapticEvent(
         eventType: .hapticTransient,

@@ -87,15 +87,18 @@ const TypewriterText: React.FC<{
       if (!currentMessage) return;
 
       if (charIndexRef.current < currentMessage.length) {
-        // Type next character
+        const char = currentMessage[charIndexRef.current];
         setDisplayedText(prev => currentMessage.slice(0, charIndexRef.current + 1));
 
-        // Try native haptic first, fallback to Expo Haptics
         try {
           HapticTypewriter.tickCharacter();
         } catch {
-          // Fallback for Expo Go
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          // Stronger fallback for Expo Go — Medium for letters, Heavy for line breaks
+          if (char === '\n') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          } else {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
         }
 
         charIndexRef.current++;
@@ -227,17 +230,17 @@ const PanicModal: React.FC<{ navigation?: any }> = ({ navigation }) => {
     bacteria: {
       icon: require('../../assets/see-images-page/bacteria.webp'),
       title: "Harmful Bacteria",
-      description: "Your nails and fingers come into contact with countless surfaces throughout the day, collecting harmful bacteria, viruses, and other pathogens. When you bite your nails, you're directly transferring these microorganisms into your mouth, which can lead to infections, illness, and other health complications."
+      description: "Your fingers collect bacteria all day. Nail biting transfers those germs straight into your mouth — increasing your risk of infection and illness."
     },
     enamel: {
       icon: require('../../assets/see-images-page/damaged-enamel-icon.webp'),
       title: "Damaged Tooth Enamel",
-      description: "Nail biting can cause significant damage to your tooth enamel, the protective outer layer of your teeth. This damage can lead to increased sensitivity, cavities, and even tooth fractures. The constant pressure and friction from biting can also cause your teeth to shift or become misaligned over time."
+      description: "Biting wears down enamel, causing sensitivity, cavities, and chips. Over time, the pressure can even shift your teeth out of alignment."
     },
     anxiety: {
       icon: require('../../assets/see-images-page/anxiety-loop.webp'),
       title: "Anxiety Reinforcement Loop",
-      description: "Nail biting creates a vicious cycle that actually reinforces anxiety rather than relieving it. While it may provide temporary relief, the habit strengthens the neural pathways that associate stress with biting, making the urge stronger over time. This creates a self-perpetuating cycle where anxiety triggers biting, and biting reinforces anxiety, making it increasingly difficult to break free from both the habit and the underlying stress."
+      description: "Biting feels like relief, but it trains your brain to reach for your nails when stressed — making both the habit and the anxiety harder to break."
     }
   };
 
@@ -265,7 +268,7 @@ const PanicModal: React.FC<{ navigation?: any }> = ({ navigation }) => {
                 "IS THE SHORT\nRELIEF WORTH\nTHE SHAME?",
                 "YOU CAN DO THIS,\nYOU ARE NOT\nALONE."
               ]}
-              speed={4}
+              speed={6}
               onComplete={handleTypewriterComplete}
               isVisible={showTypewriter}
             />

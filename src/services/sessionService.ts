@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SESSION_KEY = '@nayl_current_session';
 const USER_ID_KEY = '@nayl_user_id';
+const DASHBOARD_CACHE_KEY = '@nayl_dashboard_cache';
 
 class SessionService {
   private currentUserId: string | null = null;
@@ -245,10 +246,12 @@ class SessionService {
         await this.addCompletedStreakToTotal(currentSession.current_streak_seconds);
       }
 
-      // Update session to reset streak
+      // Update session to reset streak — start_time must be reset too,
+      // since getCurrentStreakSeconds() derives elapsed time from start_time.
       const { error: sessionError } = await supabase
         .from('user_sessions')
         .update({
+          start_time: now,
           current_streak_seconds: 0,
           last_reset_time: now,
           updated_at: now,
@@ -689,6 +692,10 @@ class SessionService {
         return null;
       }
 
+      if (data) {
+        await this.cacheDashboard(data);
+      }
+
       return data;
     } catch (error) {
       console.error('Error getting dashboard data:', error);
@@ -719,28 +726,28 @@ class SessionService {
     }
   }
 
-  // Get local dashboard data for instant display (fallback while database syncs)
-  async getLocalDashboard(): Promise<UserDashboard> {
-    // Return mock data for instant display
-    // This simulates what would come from memory/cache
-    return {
-      user_id: 'default_user',
-      current_streak_seconds: 604800, // 7 days
-      total_streak_seconds: 1209600, // 14 days
-      start_time: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-      last_reset_time: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      last_login_date: new Date().toISOString().split('T')[0],
-      consecutive_days: 7,
-      longest_streak_seconds: 604800, // 7 days
-      total_episodes: 12,
-      total_days_logged_in: 15,
-      successful_days_this_week: 5,
-      total_achievements: 6,
-      unlocked_achievements: 2,
-    };
+  async cacheDashboard(data: UserDashboard): Promise<void> {
+    try {
+      await AsyncStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(data));
+    } catch (error) {
+      console.warn('Failed to cache dashboard:', error);
+    }
   }
 
-  // Get local analytics for instant display (fallback while database syncs)
+  // Read last-known dashboard from cache (never returns stale mock data)
+  async getLocalDashboard(): Promise<UserDashboard | null> {
+    try {
+      const cached = await AsyncStorage.getItem(DASHBOARD_CACHE_KEY);
+      if (cached) {
+        return JSON.parse(cached) as UserDashboard;
+      }
+    } catch (error) {
+      console.warn('Failed to read dashboard cache:', error);
+    }
+    return null;
+  }
+
+  // Legacy alias kept for analytics — reads cache or returns minimal defaults
   async getLocalAnalytics(): Promise<UserAnalytics> {
     // Return mock data for instant display
     // This simulates what would come from memory/cache

@@ -6,34 +6,28 @@ import {
   TouchableOpacity,
   Dimensions,
   Image,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { typography, body, bodySmall, buttonText } from '../constants/typography';
+import { typography, body } from '../constants/typography';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-// Color constants
 const COLORS = {
   primaryBackground: '#000000',
-  overlayBackground: 'rgba(0, 0, 0, 0.95)',
-  primaryAccent: '#C1FF72',
   primaryText: '#FFFFFF',
-  secondaryText: '#A9A9A9',
-  mutedText: '#6B7280',
-  cardBackground: '#1F2937',
+  secondaryText: '#B0B8C4',
 };
 
-// Spacing constants
 const SPACING = {
-  xs: 4,
   sm: 8,
   md: 16,
   lg: 24,
   xl: 32,
   xxl: 48,
-  xxxl: 64,
 };
 
 interface DeterrentPageProps {
@@ -49,6 +43,8 @@ const DeterrentPage: React.FC<DeterrentPageProps> = ({
   description,
   onBack,
 }) => {
+  const insets = useSafeAreaInsets();
+
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onBack();
@@ -57,31 +53,31 @@ const DeterrentPage: React.FC<DeterrentPageProps> = ({
   return (
     <View style={styles.overlay}>
       <LinearGradient
-        colors={['#0A0A1A', '#1A1A2E', '#16213E']}
+        colors={['#000000', '#0A0A12', '#0F0F1A']}
         style={styles.backgroundGradient}
       >
-        {/* Back button */}
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.primaryText} />
-        </TouchableOpacity>
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <LinearGradient
+              colors={['#8B5CF6', '#A78BFA']}
+              style={styles.backButtonGradient}
+            >
+              <Ionicons name="chevron-back" size={28} color={COLORS.primaryText} />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
 
-        {/* Main content */}
-        <View style={styles.content}>
-          {/* Icon */}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.iconContainer}>
-            <Image 
-              source={icon} 
-              style={styles.icon}
-              resizeMode="contain"
-            />
+            <Image source={icon} style={styles.icon} resizeMode="contain" />
           </View>
 
-          {/* Title */}
           <Text style={styles.title}>{title}</Text>
-
-          {/* Description */}
           <Text style={styles.description}>{description}</Text>
-        </View>
+        </ScrollView>
       </LinearGradient>
     </View>
   );
@@ -94,31 +90,38 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: COLORS.overlayBackground,
     zIndex: 1000,
   },
   backgroundGradient: {
     flex: 1,
+  },
+  header: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xxl,
+    paddingBottom: SPACING.sm,
   },
   backButton: {
-    position: 'absolute',
-    top: SPACING.lg,
-    left: SPACING.lg,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1001,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 20,
+    borderRadius: 25,
+    overflow: 'hidden',
+    alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  content: {
-    flex: 1,
+  backButtonGradient: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.xxl,
   },
   iconContainer: {
     marginBottom: SPACING.xxl,
@@ -126,8 +129,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   icon: {
-    width: 150,
-    height: 150,
+    width: 140,
+    height: 140,
   },
   title: {
     ...typography.h1,
@@ -135,16 +138,17 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
     lineHeight: 36,
   },
   description: {
     ...body,
     color: COLORS.secondaryText,
-    fontSize: 16,
+    fontSize: 17,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 26,
     maxWidth: width - SPACING.lg * 2,
+    letterSpacing: 0.2,
   },
 });
 
